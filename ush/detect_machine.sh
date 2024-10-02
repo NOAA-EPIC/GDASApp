@@ -64,6 +64,8 @@ fi
 if [[ -d /lfs/h3 ]]; then
   # We are on NOAA Cactus or Dogwood
   MACHINE_ID=wcoss2
+elif [[ -d /opt/spack-stack ]]; then
+  MACHINE_ID=container
 elif [[ -d /lfs/h1 && ! -d /lfs/h3 ]]; then
   # We are on NOAA TDS Acorn
   MACHINE_ID=acorn

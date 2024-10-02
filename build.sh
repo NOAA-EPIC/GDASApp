@@ -6,6 +6,7 @@
 # 4 - optional, run unit tests
 
 set -eu
+set -x
 
 dir_root="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -21,6 +22,7 @@ usage() {
   echo "  -t  target to build for <target>    DEFAULT: $MACHINE_ID"
   echo "  -c  additional CMake options        DEFAULT: <none>"
   echo "  -v  build with verbose output       DEFAULT: NO"
+  echo "  -i  build jedi with inline forecast DEFAULT: NO"
   echo "  -f  force a clean build             DEFAULT: NO"
   echo "  -d  include JCSDA ctest data        DEFAULT: NO"
   echo "  -a  build everything in bundle      DEFAULT: NO"
@@ -37,11 +39,12 @@ CMAKE_OPTS=""
 BUILD_TARGET="${MACHINE_ID:-'localhost'}"
 BUILD_VERBOSE="NO"
 CLONE_JCSDADATA="NO"
+BUILD_INLINE="NO"
 CLEAN_BUILD="NO"
 BUILD_JCSDA="NO"
 COMPILER="${COMPILER:-intel}"
 
-while getopts "p:t:c:hvdfa" opt; do
+while getopts "p:t:c:hivdfa" opt; do
   case $opt in
     p)
       INSTALL_PREFIX=$OPTARG
@@ -51,6 +54,10 @@ while getopts "p:t:c:hvdfa" opt; do
       ;;
     c)
       CMAKE_OPTS=$OPTARG
+      ;;
+    i)
+      BUILD_INLINE=YES
+      BUILD_GDASBUNDLE=NO
       ;;
     v)
       BUILD_VERBOSE=YES
@@ -71,7 +78,7 @@ while getopts "p:t:c:hvdfa" opt; do
 done
 
 case ${BUILD_TARGET} in
-  hera | orion | hercules | wcoss2 | noaacloud | gaea)
+  hera | orion | hercules | container | wcoss2 | noaacloud | gaea)
     echo "Building GDASApp on $BUILD_TARGET"
     source $dir_root/ush/module-setup.sh
     module use $dir_root/modulefiles
@@ -88,6 +95,7 @@ case ${BUILD_TARGET} in
 esac
 
 CMAKE_OPTS+=" -DCLONE_JCSDADATA=$CLONE_JCSDADATA -DMACHINE=$BUILD_TARGET"
+CMAKE_OPTS+=" -DBUILD_INLINE=$BUILD_INLINE -DBUILD_GDASBUNDLE=$BUILD_GDASBUNDLE"
 
 BUILD_DIR=${BUILD_DIR:-$dir_root/build}
 if [[ $CLEAN_BUILD == 'YES' ]]; then
