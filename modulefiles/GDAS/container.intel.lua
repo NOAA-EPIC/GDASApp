@@ -91,6 +91,7 @@ setenv('MPIEXEC_NPROC', mpinproc)
 setenv("CRTM_FIX","/scratch1/NCEPDEV/da/role.jedipara/GDASApp/fix")
 setenv("GDASAPP_TESTDATA","/scratch1/NCEPDEV/da/role.jedipara/GDASApp")
 setenv("GDASAPP_UNIT_TEST_DATA_PATH", "/scratch1/NCEPDEV/da/role.jedipara/GDASApp/unittestdata")
+prepend_path("LIBRARY_PATH","/opt/spack-stack/spack-stack-1.8.0/envs/unified-env/install/intel/2021.10.0/netcdf-c-4.9.2-emgx4ds/lib")
 --prepend_path("PATH","/scratch2/NCEPDEV/nwprod/hpc-stack/libs/hpc-stack/intel-18.0.5.274/prod_util/1.2.2/bin")
 
 whatis("Name: ".. pkgName)
