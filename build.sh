@@ -82,7 +82,7 @@ case ${BUILD_TARGET} in
     echo "Building GDASApp on $BUILD_TARGET"
     source $dir_root/ush/module-setup.sh
     module use $dir_root/modulefiles
-    module load GDAS/$BUILD_TARGET.$COMPILER
+    module load GDAS/$BUILD_TARGET.$COMPILER || true
     CMAKE_OPTS+=" -DMPIEXEC_EXECUTABLE=$MPIEXEC_EXEC -DMPIEXEC_NUMPROC_FLAG=$MPIEXEC_NPROC -DBUILD_GSIBEC=ON"
     module list
     ;;
@@ -98,9 +98,9 @@ CMAKE_OPTS+=" -DCLONE_JCSDADATA=$CLONE_JCSDADATA -DMACHINE=$BUILD_TARGET"
 CMAKE_OPTS+=" -DBUILD_INLINE=$BUILD_INLINE -DBUILD_GDASBUNDLE=$BUILD_GDASBUNDLE"
 
 BUILD_DIR=${BUILD_DIR:-$dir_root/build}
-if [[ $CLEAN_BUILD == 'YES' ]]; then
-  [[ -d ${BUILD_DIR} ]] && rm -rf ${BUILD_DIR}
-fi
+#if [[ $CLEAN_BUILD == 'YES' ]]; then
+#  [[ -d ${BUILD_DIR} ]] && rm -rf ${BUILD_DIR}
+#fi
 mkdir -p ${BUILD_DIR} && cd ${BUILD_DIR}
 
 # If INSTALL_PREFIX is not empty; install at INSTALL_PREFIX
