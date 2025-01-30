@@ -43,6 +43,7 @@ BUILD_INLINE="NO"
 CLEAN_BUILD="NO"
 BUILD_JCSDA="NO"
 COMPILER="${COMPILER:-intel}"
+BUILD_GDASBUNDLE=YES
 
 while getopts "p:t:c:hivdfa" opt; do
   case $opt in
