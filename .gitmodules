@@ -91,3 +91,7 @@
   path = sorc/bufr-query
   url = https://github.com/noaa-emc/bufr-query.git
   branch = develop
+[submodule "sorc/uwtools"]
+	path = sorc/uwtools
+	url = https://github.com/ufs-community/uwtools.git
+	branch = 2.5.1

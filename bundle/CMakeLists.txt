@@ -16,6 +16,7 @@ project(GDAS-bundle VERSION 1.0.0 LANGUAGES C CXX Fortran )
 include(GNUInstallDirs)
 enable_testing()
 
+
 # Build type.
 if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel)$")
   message(STATUS "Setting build type to 'Release' as none was specified.")
@@ -155,6 +156,32 @@ include( ExternalProject )
 find_package( ecbuild 3.5 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild)
 
 project( ufs-bundle VERSION 1.1.0 LANGUAGES C CXX Fortran )
+set(UWTOOLS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../sorc/uwtools/src)
+set(UWTOOLS_REPO https://github.com/ufs-community/uwtools.git)
+set(UWTOOLS_TAG "2.5.1" )
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/venv/uwtools")
+    # Create the activation script
+    message("creating venv")
+    execute_process(
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/script.sh ${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    RESULT_VARIABLE result
+    OUTPUT_VARIABLE output
+    ERROR_VARIABLE error)
+    message(STATUS "Output of the command:\n${output}|${error}|${result}")
+endif()
+# Execute the activation script
+message("activating venv")
+execute_process(
+    COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/script2.sh ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../sorc/uwtools
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    RESULT_VARIABLE result
+    OUTPUT_VARIABLE output
+    ERROR_VARIABLE error)
+message(STATUS "Output of the command:\n${output}|${error}|${result}")
+
+#execute_process(COMMAND "pip install ." WORKING_DIRECTORY ${UWTOOLS_SOURCE_DIR} OUTPUT_VARIABLE output)
+#message(STATUS "Output of the command:\n${output}")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -258,8 +285,6 @@ else()
   set(UFS_CMAKE_BUILD_TYPE_FLAG "-DREPRO=ON")
 endif()
 
-
-#set(UFS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ufs-weather-model-cont)
 set(UFS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ufs-weather-model)
 set(UFS_REPO https://github.com/ufs-community/ufs-weather-model)
 set(UFS_TAG "develop" )
