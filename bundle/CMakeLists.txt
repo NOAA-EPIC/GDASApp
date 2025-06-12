@@ -10,7 +10,6 @@ find_package(ecbuild 3.5 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURR
 
 project(GDAS-bundle VERSION 1.0.0 LANGUAGES C CXX Fortran )
 
-include(GNUInstallDirs)
 enable_testing()
 
 # Build type.
@@ -48,7 +47,6 @@ link_directories(${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR})
 # Library path for non-ecbuild packages
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
 
-include( GNUInstallDirs )
 if(APPLE)
   list( APPEND CMAKE_INSTALL_RPATH $ENV{llvm_openmp_ROOT}/lib )
 endif()
