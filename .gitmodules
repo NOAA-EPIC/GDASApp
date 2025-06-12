@@ -11,8 +11,8 @@
   branch = develop
 [submodule "sorc/oops"]
   path = sorc/oops
-  url = https://github.com/jcsda/oops.git
-  branch = develop
+  url = https://github.com/noaa-epic/oops.git
+  branch = feature/Rtranspose
 [submodule "sorc/vader"]
   path = sorc/vader
   url = https://github.com/jcsda/vader.git
@@ -43,11 +43,11 @@
   branch = develop
 [submodule "sorc/fv3-jedi"]
   path = sorc/fv3-jedi
-  url = https://github.com/jcsda/fv3-jedi.git
-  branch = develop
+  url = https://github.com/noaa-epic/fv3-jedi.git
+  branch = feature/Rtranspose
 [submodule "sorc/soca"]
   path = sorc/soca
-  url = https://github.com/NOAA-EMC/soca.git
+  url = https://github.com/NOAA-EPIC/soca.git
   branch = dev/emc
 [submodule "sorc/iodaconv"]
   path = sorc/iodaconv

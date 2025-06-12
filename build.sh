@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -x
 # build.sh
 # 1 - determine host, load modules on supported hosts; proceed w/o otherwise
 # 2 - configure; build; install
@@ -88,7 +89,7 @@ case ${BUILD_TARGET} in
     ;;
 esac
 
-CMAKE_OPTS+=" -DCLONE_JCSDADATA=$CLONE_JCSDADATA -DMACHINE=$BUILD_TARGET"
+CMAKE_OPTS+=" -DCLONE_JCSDADATA=$CLONE_JCSDADATA -DMACHINE=$BUILD_TARGET -DUFS_APP=ATM"
 
 # TODO: Remove LD_LIBRARY_PATH line as soon as permanent solution is available
 if [[ $BUILD_TARGET == 'wcoss2' ]]; then
@@ -132,6 +133,7 @@ cmake \
   $dir_root/bundle
 set +x
 
+export LIBRARY_PATH=$LIBRARY_PATH:$netcdf_c_ROOT/lib
 # Build
 echo "Building ... `date`"
 set -x

@@ -2,7 +2,7 @@
 # --------------------------------------------------------------------
 ecbuild_add_executable( TARGET  gdas.x
                         SOURCES gdas.cc
-                        LIBS    fv3jedi soca
+                        LIBS    fv3jedi soca fv3ccpp ccpp_physics
                       )
 
 # Build the soca executables that are not OOPS-based
@@ -24,5 +24,5 @@ ecbuild_add_executable( TARGET  gdas_soca_setcorscales.x
 
 ecbuild_add_executable( TARGET  gdas_fv3jedi_error_covariance_toolbox.x
                         SOURCES ${CMAKE_SOURCE_DIR}/fv3-jedi/src/mains/fv3jediErrorCovarianceToolbox.cc
-                        LIBS    fv3jedi saber
+                        LIBS    fv3jedi saber fv3ccpp ccpp_physics
                       )
