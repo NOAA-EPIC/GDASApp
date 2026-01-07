@@ -1,0 +1,25 @@
+# Search path for model and obs for JCB
+# -------------------------------------
+algorithm_path: "{{ PARMgfs }}/gdas/jcb-algorithms"
+app_path_algorithm: "{{ PARMgfs }}/gdas/jcb-gdas/algorithm/observation_statistics"
+app_path_observations: "{{ PARMgfs }}/gdas/jcb-gdas/observation_statistics/aero"
+
+# Assimilation window
+# -------------------
+window_begin: "{{ WINDOW_BEGIN | to_isotime }}"
+window_YMDH: "{{ WINDOW_BEGIN | to_YMDH }}"
+window_length: "{{ WINDOW_LENGTH }}"
+bound_to_include: begin
+
+current_cycle_iso: "{{ current_cycle | to_isotime }}"
+
+# Obspace variable things
+# -----------------------
+
+aero_obsdatain_path: "{{ DATA }}/aero/diag"
+aero_obsdatain_prefix: "diag_"
+aero_obsdatain_suffix: "_{{ current_cycle | to_YMDH }}.nc"
+
+aero_obsdataout_path: "{{ DATA }}/aero/stat"
+aero_obsdataout_prefix: ""
+aero_obsdataout_suffix: "_{{ current_cycle | to_YMDH }}_output_aod.nc"

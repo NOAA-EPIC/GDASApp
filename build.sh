@@ -26,6 +26,7 @@ usage() {
   echo "  -f  force a clean build             DEFAULT: NO"
   echo "  -d  include JCSDA ctest data        DEFAULT: NO"
   echo "  -a  build everything in bundle      DEFAULT: NO"
+  echo "  -i  clone and build ioda-converters DEFAULT: NO"
   echo "  -h  display this message and quit"
   echo
   exit 1
@@ -34,19 +35,22 @@ usage() {
 # ==============================================================================
 
 # Defaults:
-INSTALL_PREFIX=""
+INSTALL_PREFIX="${dir_root}/install"
+CMAKE_INSTALL_LIBDIR="lib"
 CMAKE_OPTS=""
 BUILD_TARGET="${MACHINE_ID:-'localhost'}"
 BUILD_VERBOSE="NO"
+BUILD_TESTING="OFF"
 CLONE_JCSDADATA="NO"
 CLEAN_BUILD="NO"
-BUILD_JCSDA="NO"
 COMPILER="${COMPILER:-intel}"
+WORKFLOW_BUILD=${WORKFLOW_BUILD:-"OFF"}
+BUILD_IODA_CONVERTERS=${BUILD_IODA_CONVERTERS:-"NO"}
 
-while getopts "p:t:c:hvdfa" opt; do
+while getopts "w:t:c:hvdfai" opt; do
   case $opt in
-    p)
-      INSTALL_PREFIX=$OPTARG
+    w)
+      HOMEgfs=$OPTARG
       ;;
     t)
       BUILD_TARGET=$OPTARG
@@ -63,8 +67,8 @@ while getopts "p:t:c:hvdfa" opt; do
     f)
       CLEAN_BUILD=YES
       ;;
-    a)
-      BUILD_JCSDA=YES
+    i)
+      BUILD_IODA_CONVERTERS=YES
       ;;
     h|\?|:)
       usage
@@ -78,7 +82,7 @@ case ${BUILD_TARGET} in
     source $dir_root/ush/module-setup.sh
     module use $dir_root/modulefiles
     module load GDAS/$BUILD_TARGET.$COMPILER
-    CMAKE_OPTS+=" -DMPIEXEC_EXECUTABLE=$MPIEXEC_EXEC -DMPIEXEC_NUMPROC_FLAG=$MPIEXEC_NPROC -DBUILD_GSIBEC=ON"
+    CMAKE_OPTS+=" -DMPIEXEC_EXECUTABLE=$MPIEXEC_EXEC -DMPIEXEC_NUMPROC_FLAG=$MPIEXEC_NPROC -DBUILD_GSIBEC=ON -DBUILD_IODA_CONVERTERS=$BUILD_IODA_CONVERTERS"
     module list
     ;;
   $(hostname))
@@ -89,11 +93,14 @@ case ${BUILD_TARGET} in
     ;;
 esac
 
-CMAKE_OPTS+=" -DCLONE_JCSDADATA=$CLONE_JCSDADATA -DMACHINE=$BUILD_TARGET -DUFS_APP=ATM -DCMAKE_INSTALL_LIBDIR:PATH=lib"
+#CMAKE_OPTS+=" -DCLONE_JCSDADATA=$CLONE_JCSDADATA -DMACHINE=$BUILD_TARGET -DUFS_APP=ATM -DCMAKE_INSTALL_LIBDIR:PATH=lib"
+CMAKE_OPTS+=" -DCLONE_JCSDADATA=$CLONE_JCSDADATA -DMACHINE=$BUILD_TARGET -DBUILD_TESTING=$BUILD_TESTING"
 
 # TODO: Remove LD_LIBRARY_PATH line as soon as permanent solution is available
 if [[ $BUILD_TARGET == 'wcoss2' ]]; then
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/cray/pe/mpich/8.1.19/ofi/intel/19.0/lib"
+  export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/cray/pe/mpich/8.1.29/ofi/intel/2022.1/lib"
+  export LMOD_MPI_NAME=cray-mpich
+  export LMOD_MPI_VERSION=8.1.29-xhbciau
 fi
 
 BUILD_DIR=${BUILD_DIR:-$dir_root/build}
@@ -102,20 +109,31 @@ if [[ $CLEAN_BUILD == 'YES' ]]; then
 fi
 mkdir -p ${BUILD_DIR} && cd ${BUILD_DIR}
 
-# If INSTALL_PREFIX is not empty; install at INSTALL_PREFIX
-[[ -n "${INSTALL_PREFIX:-}" ]] && CMAKE_OPTS+=" -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}"
-
-# activate tests based on if this is cloned within the global-workflow
-WORKFLOW_BUILD=${WORKFLOW_BUILD:-"OFF"}
+# Set WORKFLOW_TESTS as CMake option
 CMAKE_OPTS+=" -DWORKFLOW_TESTS=${WORKFLOW_TESTS:-${WORKFLOW_BUILD}}"
 
-# Link MOM6 and Icepack in SOCA to submodules in the UFS repo
 if [[ $WORKFLOW_BUILD == 'ON' ]]; then
+  # Link MOM6 and Icepack in SOCA to submodules in the UFS repo
   rm -rf $dir_root/sorc/soca/external/mom6/MOM6
   rm -rf $dir_root/sorc/soca/external/icepack/Icepack
-  ln -sf $dir_root/../ufs_model.fd/MOM6-interface/MOM6/ $dir_root/sorc/soca/external/mom6/MOM6
-  ln -sf $dir_root/../ufs_model.fd/CICE-interface/CICE/icepack/ $dir_root/sorc/soca/external/icepack/Icepack
+  ln -sf $HOMEgfs/sorc/ufs_model.fd/MOM6-interface/MOM6/ $dir_root/sorc/soca/external/mom6/MOM6
+  ln -sf $HOMEgfs/sorc/ufs_model.fd/CICE-interface/CICE/icepack/ $dir_root/sorc/soca/external/icepack/Icepack
+else
+  # Delete forked SOCA NOAA-EMC dev/emc repo and clone the original JCSDA develop repo
+  rm -rf "$dir_root/sorc/soca/"
+  git clone https://github.com/jcsda/soca "$dir_root/sorc/soca" --recurse-submodules
 fi
+
+if [[ $BUILD_IODA_CONVERTERS == 'YES' ]]; then
+  # Clone and build ioda-converters
+  git clone https://github.com/jcsda-internal/ioda-converters "$dir_root/sorc/iodaconv"
+fi
+
+# Set INSTALL_PREFIX as CMake option
+CMAKE_OPTS+=" -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX}"
+
+# Set CMAKE_INSTALL_LIBDIR as CMake option
+CMAKE_OPTS+=" -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR}"
 
 # JCSDA changed test data things, need to make a dummy CRTM directory
 if [ -d "$dir_root/bundle/fix/test-data-release/" ]; then rm -rf $dir_root/bundle/fix/test-data-release/; fi
@@ -133,31 +151,12 @@ cmake \
   $dir_root/bundle
 set +x
 
-export LIBRARY_PATH=$LIBRARY_PATH:$netcdf_c_ROOT/lib
-# Build
-echo "Building ... `date`"
+#export LIBRARY_PATH=$LIBRARY_PATH:$netcdf_c_ROOT/lib
+# Install
+echo "Installing ... `date`"
 set -x
-if [[ $BUILD_JCSDA == 'YES' ]]; then
-  make -j ${BUILD_JOBS:-8} VERBOSE=$BUILD_VERBOSE
-else
-  builddirs="gdas iodaconv land-imsproc land-jediincr gdas-utils bufr-query da-utils"
-  for b in $builddirs; do
-    cd $b
-    set +x
-    echo "Building $b ... `date`"
-    set -x
-    make -j ${BUILD_JOBS:-8} VERBOSE=$BUILD_VERBOSE
-    cd ../
-  done
-fi
+make install -j ${BUILD_JOBS:-8} VERBOSE=${BUILD_VERBOSE:-}
 set +x
 
-# Install
-if [[ -n ${INSTALL_PREFIX:-} ]]; then
-  echo "Installing ... `date`"
-  set -x
-  make install -j ${BUILD_JOBS:-8}
-  set +x
-fi
 echo "Finish ... `date`"
 exit 0

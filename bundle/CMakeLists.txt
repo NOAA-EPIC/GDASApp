@@ -8,7 +8,7 @@ include( ExternalProject )
 
 find_package(ecbuild 3.5 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild)
 
-project(GDAS-bundle VERSION 1.0.0 LANGUAGES C CXX Fortran )
+project(gdas VERSION 1.0.0 LANGUAGES C CXX Fortran )
 
 enable_testing()
 
@@ -36,6 +36,7 @@ option(BUILD_GDASBUNDLE "Build GDAS Bundle" ON)
 option(CLONE_JCSDADATA "Clone JCSDA test data repositories" OFF)
 option(WORKFLOW_TESTS "Include global-workflow dependent tests" OFF)
 option(BUILD_REGRID_STATES "Build regrid states land DA utility" ON)
+option(BUILD_IODA_CONVERTERS "Build IODA Converters" OFF)
 
 # Depend path for non-ecbuild packages
 set(DEPEND_LIB_ROOT ${CMAKE_CURRENT_BINARY_DIR}/Depends)
@@ -45,12 +46,11 @@ include_directories(${DEPEND_LIB_ROOT}/include_r8)
 link_directories(${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR})
 
 # Library path for non-ecbuild packages
-link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
+link_directories(${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 
 if(APPLE)
-  list( APPEND CMAKE_INSTALL_RPATH $ENV{llvm_openmp_ROOT}/lib )
+  list( APPEND CMAKE_INSTALL_RPATH $ENV{llvm_openmp_ROOT}/${CMAKE_INSTALL_LIBDIR} )
 endif()
-#list( APPEND CMAKE_INSTALL_RPATH ${CMAKE_CURRENT_BINARY_DIR}/fv3 )
 
 # Initialize bundle
 # -----------------
@@ -79,7 +79,7 @@ if(BUILD_GDASBUNDLE)
 # External (required) observation operators
   # TODO remove the CRTM from here and use it as a library
   #option("BUNDLE_SKIP_CRTM" "Don't build CRTM" "OFF") # Don't build crtm unless user passes -DBUNDLE_SKIP_CRTM=OFF
-  #ecbuild_bundle( PROJECT crtm GIT "https://github.com/JCSDA/crtm.git"   TAG v2.4.1-jedi.1 )
+  #ecbuild_bundle( PROJECT crtm GIT "https://github.com/JCSDA/crtm.git"   TAG v2.4.1-jedi.2 )
   ecbuild_bundle( PROJECT crtm SOURCE "../sorc/crtm" )
 
 # Build GSI-B
@@ -202,12 +202,7 @@ if(BUILD_GDASBUNDLE)
   option(ENABLE_UFO_DATA "Obtain ufo test data from ufo-data repository (vs tarball)" ON)
   ecbuild_bundle( PROJECT ufo SOURCE "../sorc/ufo" )
 
-# FV3 dynamical core
-# include(fv3-interface.cmake)
-# ecbuild_bundle( PROJECT fv3 SOURCE "../sorc/fv3" )
-
 # fv3-jedi and associated repositories
-  ecbuild_bundle( PROJECT femps SOURCE "../sorc/femps" )
   ecbuild_bundle( PROJECT fv3-jedi-lm SOURCE "../sorc/fv3-jedi-lm" )
   option(ENABLE_FV3_JEDI_DATA "Obtain fv3-jedi test data from fv3-jedi-data repository (vs tarball)" ON)
   ecbuild_bundle( PROJECT fv3-jedi SOURCE "../sorc/fv3-jedi" )
@@ -220,17 +215,26 @@ if(BUILD_GDASBUNDLE)
   ecbuild_bundle( PROJECT da-utils SOURCE "../sorc/da-utils" )
 
 # Build IODA converters
-  option(BUILD_IODA_CONVERTERS "Build IODA Converters" ON)
   if(BUILD_IODA_CONVERTERS)
     ecbuild_bundle( PROJECT iodaconv SOURCE "../sorc/iodaconv" )
   endif()
 
 # Land associated repositories
-  ecbuild_bundle( PROJECT land-imsproc SOURCE "../sorc/land-imsproc" )
   ecbuild_bundle( PROJECT land-jediincr SOURCE "../sorc/land-jediincr" )
 
 # GDASApp
   ecbuild_bundle( PROJECT gdas SOURCE "../")
+
+# Install jcb (JEDI Configuration Builder) Python package
+  message(STATUS "Installing jcb (JEDI Configuration Builder)")
+  execute_process(
+    COMMAND ${Python3_EXECUTABLE} -m pip install --no-deps --no-build-isolation --prefix ${CMAKE_INSTALL_PREFIX} .
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../sorc/jcb
+    RESULT_VARIABLE jcb_install_result
+  )
+  if(NOT jcb_install_result EQUAL 0)
+    message(FATAL_ERROR "Failed to install jcb Python package")
+  endif()
 
 # ioda, ufo, fv3-jedi, and saber test data
 #---------------------------------

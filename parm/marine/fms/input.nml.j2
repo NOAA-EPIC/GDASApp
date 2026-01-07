@@ -1,0 +1,23 @@
+ &MOM_input_nml
+        output_directory = './',
+        input_filename = 'r',
+        {% if not simple_geom %}
+        restart_input_dir = 'INPUT/',
+        restart_output_dir = 'RESTART/',
+        {% endif %}
+        parameter_filename = '{{ mom_input }}'
+ /
+
+ &diag_manager_nml
+ /
+
+ &fms_io_nml
+      max_files_r=100
+      max_files_w=100
+      checksum_required=.false.
+/
+
+ &fms_nml
+       clock_grain='MODULE'
+       domains_stack_size = {{ domain_stack_size }}
+       clock_flags='SYNC' /

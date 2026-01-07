@@ -41,10 +41,20 @@ done
 echo "Running automated testing on $TARGET"
 
 case ${TARGET} in
-  hera | orion | hercules)
+  hera | ursa | orion | hercules)
     source $MODULESHOME/init/sh
     source $my_dir/${TARGET}.sh
     module purge
+    module use $GDAS_MODULE_USE
+    module load GDAS/$TARGET
+    module list
+    ;;
+  gaeac6)
+    source $my_dir/${TARGET}.sh
+    if ( ! eval module help > /dev/null 2>&1 ) ; then
+        source /etc/profile
+    fi
+    module reset
     module use $GDAS_MODULE_USE
     module load GDAS/$TARGET
     module list
@@ -193,6 +203,7 @@ for pr in $open_pr_list; do
       branch_body=$(gh pr view $pr --repo ${gdasapp_url} --json body --jq '.body')
       ci_checklist=$(echo "$branch_body" | grep -i '\[x\]')
       ctest_regex_exclude=""
+
       for ci_test in ${CI_TESTS[@]}; do
         if ! echo "$ci_checklist" | grep -q "$ci_test"; then
 	  ctest_regex_exclude+="${ctest_regex_exclude:+|}$ci_test"

@@ -29,14 +29,6 @@
   path = sorc/ufo
   url = https://github.com/jcsda/ufo.git
   branch = develop
-[submodule "sorc/fv3"]
-  path = sorc/fv3
-  url = https://github.com/jcsda/GFDL_atmos_cubed_sphere.git
-  branch = release-stable
-[submodule "sorc/femps"]
-  path = sorc/femps
-  url = https://github.com/jcsda/femps.git
-  branch = develop
 [submodule "sorc/fv3-jedi-lm"]
   path = sorc/fv3-jedi-lm
   url = https://github.com/jcsda/fv3-jedi-linearmodel.git
@@ -49,14 +41,6 @@
   path = sorc/soca
   url = https://github.com/NOAA-EPIC/soca.git
   branch = dev/emc
-[submodule "sorc/iodaconv"]
-  path = sorc/iodaconv
-  url = https://github.com/JCSDA-internal/ioda-converters.git
-  branch = develop
-[submodule "sorc/land-imsproc"]
-  path = sorc/land-imsproc
-  url = https://github.com/NOAA-PSL/land-IMS_proc.git
-  branch = develop
 [submodule "sorc/land-jediincr"]
   path = sorc/land-jediincr
   url = https://github.com/NOAA-EMC/land-apply_jedi_incr.git
@@ -85,3 +69,8 @@
   path = sorc/bufr-query
   url = https://github.com/noaa-emc/bufr-query.git
   branch = develop
+[submodule "sorc/spoc"]
+  path = sorc/spoc
+  url = https://github.com/noaa-emc/spoc.git
+  branch = develop
+  ignore = dirty

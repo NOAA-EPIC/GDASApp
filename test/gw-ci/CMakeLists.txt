@@ -5,6 +5,9 @@ function(add_task task_name test_prefix is_full_cycle HALF_CYCLE FULL_CYCLE pslo
   if("${task_name}" STREQUAL "gdas_fcst")
     set(subtask_names_list
       "gdas_fcst_seg0")
+  elseif("${task_name}" STREQUAL "gcdas_fcst")
+    set(subtask_names_list
+      "gcdas_fcst_seg0")
   elseif("${task_name}" STREQUAL "enkfgdas_fcst")
       set(subtask_names_list
         "enkfgdas_fcst_mem001"
@@ -21,6 +24,12 @@ function(add_task task_name test_prefix is_full_cycle HALF_CYCLE FULL_CYCLE pslo
       "gdas_atmos_prod_f007"
       "gdas_atmos_prod_f008"
       "gdas_atmos_prod_f009")
+  elseif("${task_name}" STREQUAL "gcdas_atmos_prod")
+    set(subtask_names_list
+      "gcdas_atmos_prod_f000"
+      "gcdas_atmos_prod_f003"
+      "gcdas_atmos_prod_f006"
+      "gcdas_atmos_prod_f009")
   elseif("${task_name}" STREQUAL "enkfgdas_epmn")
     set(subtask_names_list
       "enkfgdas_epos000"
@@ -31,10 +40,15 @@ function(add_task task_name test_prefix is_full_cycle HALF_CYCLE FULL_CYCLE pslo
       "enkfgdas_epos005"
       "enkfgdas_epos006")
   elseif("${task_name}" STREQUAL "enkfgdas_ecmn")
-    set(subtask_names_list
-      "enkfgdas_ecen000"
-      "enkfgdas_ecen001"
-      "enkfgdas_ecen002")
+    if("${pslot}" STREQUAL "C96C48_ufsgsi_hybatmDA")
+      set(subtask_names_list
+        "enkfgdas_ecen000")
+    else()
+      set(subtask_names_list
+        "enkfgdas_ecen000"
+        "enkfgdas_ecen001"
+        "enkfgdas_ecen002")
+    endif()
   else()
     set(subtask_names_list ${task_name})
   endif()
@@ -59,8 +73,13 @@ function(add_task task_name test_prefix is_full_cycle HALF_CYCLE FULL_CYCLE pslo
       list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_fcst_${HALF_CYCLE}")
     elseif("${task_name}" STREQUAL "enkfgdas_epmn")
       list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_fcst_${HALF_CYCLE}")
-    elseif("${task_name}" STREQUAL "gdas_aeroanlgenb")
-      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_fcst_${HALF_CYCLE}")
+    elseif("${task_name}" STREQUAL "gcdas_fcst")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_stage_ic_${HALF_CYCLE}")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_prep_emissions_${HALF_CYCLE}")
+    elseif("${task_name}" STREQUAL "gcdas_atmos_prod")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_fcst_${HALF_CYCLE}")
+    elseif("${task_name}" STREQUAL "gcdas_aeroanlgenb")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_fcst_${HALF_CYCLE}")
     else()
       list(APPEND TEST_DEPENDS "${test_prefix}")
     endif()
@@ -68,33 +87,45 @@ function(add_task task_name test_prefix is_full_cycle HALF_CYCLE FULL_CYCLE pslo
     if("${task_name}" STREQUAL "gdas_prep")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_fcst_${HALF_CYCLE}")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_atmos_prod_${HALF_CYCLE}")
+    elseif("${task_name}" STREQUAL "gcdas_prep")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_fcst_${HALF_CYCLE}")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_atmos_prod_${HALF_CYCLE}")
     elseif("${task_name}" STREQUAL "gdas_anal")
       list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_epmn_${HALF_CYCLE}")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_prep_${FULL_CYCLE}")
-    elseif("${task_name}" STREQUAL "gdas_prepatmiodaobs")
-      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_prep_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "gdas_atmanlinit")
       list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_epmn_${HALF_CYCLE}")
-      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_prepatmiodaobs_${FULL_CYCLE}")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_prep_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "gdas_atmanlvar")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_atmanlinit_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "gdas_atmanlfv3inc")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_atmanlvar_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "gdas_atmanlfinal")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_atmanlfv3inc_${FULL_CYCLE}")
-    elseif("${task_name}" STREQUAL "gdas_aeroanlinit")
-      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_aeroanlgenb_${HALF_CYCLE}")
-      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_prep_${FULL_CYCLE}")
-    elseif("${task_name}" STREQUAL "gdas_aeroanlvar")
-      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_aeroanlinit_${FULL_CYCLE}")
-    elseif("${task_name}" STREQUAL "gdas_aeroanlfinal")
-      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_aeroanlvar_${FULL_CYCLE}")
+    elseif("${task_name}" STREQUAL "gcdas_offlineanl")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_fcst_${HALF_CYCLE}")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_fetch_${FULL_CYCLE}")
+    elseif("${task_name}" STREQUAL "gcdas_sfcanl")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_offlineanl_${FULL_CYCLE}")
+    elseif ("${task_name}" STREQUAL "gcdas_prep")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_fcst_${HALF_CYCLE}")
+    elseif("${task_name}" STREQUAL "gcdas_aeroanlinit")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_aeroanlgenb_${HALF_CYCLE}")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_prep_${FULL_CYCLE}")
+    elseif("${task_name}" STREQUAL "gcdas_aeroanlvar")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_aeroanlinit_${FULL_CYCLE}")
+    elseif("${task_name}" STREQUAL "gcdas_aeroanlfinal")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_aeroanlvar_${FULL_CYCLE}")
+    elseif("${task_name}" STREQUAL "gcdas_aeroanlgenb")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_fcst_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "gdas_snowanl")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_prep_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "gdas_sfcanl")
       if("${pslot}" STREQUAL "C96C48_ufs_hybatmDA")
         list(APPEND TEST_DEPENDS "${test_prefix}_gdas_atmanlfinal_${FULL_CYCLE}")
-      elseif("${pslot}" STREQUAL "C96C48_hybatmaerosnowDA")
+      elseif("${pslot}" STREQUAL "C96C48_ufsgsi_hybatmDA")
+        list(APPEND TEST_DEPENDS "${test_prefix}_gdas_atmanlfinal_${FULL_CYCLE}")
+      elseif("${pslot}" STREQUAL "C96C48_hybatmsnowDA")
         list(APPEND TEST_DEPENDS "${test_prefix}_gdas_anal_${FULL_CYCLE}")
         list(APPEND TEST_DEPENDS "${test_prefix}_snowanal_${FULL_CYCLE}")
       elseif("${pslot}" STREQUAL "C96C48_hybatmDA")
@@ -106,12 +137,14 @@ function(add_task task_name test_prefix is_full_cycle HALF_CYCLE FULL_CYCLE pslo
     elseif("${task_name}" STREQUAL "gdas_analcalc")
       list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_echgres_${HALF_CYCLE}")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_sfcanl_${FULL_CYCLE}")
+      if("${pslot}" STREQUAL "C96C48_ufsgsi_hybatmDA")
+        list(APPEND TEST_DEPENDS "${test_prefix}_gdas_atmanlfinal_${FULL_CYCLE}")
+      endif()
     elseif("${task_name}" STREQUAL "gdas_analcalc_fv3jedi")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_atmanlfinal_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "gdas_fcst")
-      if("${pslot}" STREQUAL "C96C48_hybatmaerosnowDA")
+      if("${pslot}" STREQUAL "C96C48_hybatmsnowDA")
         list(APPEND TEST_DEPENDS "${test_prefix}_gdas_sfcanl_${FULL_CYCLE}")
-        list(APPEND TEST_DEPENDS "${test_prefix}_gdas_aeroanlfinal_${FULL_CYCLE}")
       elseif("${pslot}" STREQUAL "C48mx500_3DVarAOWCDA")
         list(APPEND TEST_DEPENDS "${test_prefix}_gdas_sfcanl_${FULL_CYCLE}")
 	list(APPEND TEST_DEPENDS "${test_prefix}_gdas_waveinit_${FULL_CYCLE}")
@@ -119,9 +152,13 @@ function(add_task task_name test_prefix is_full_cycle HALF_CYCLE FULL_CYCLE pslo
       else()
         list(APPEND TEST_DEPENDS "${test_prefix}_gdas_sfcanl_${FULL_CYCLE}")
       endif()
+    elseif("${task_name}" STREQUAL "gcdas_fcst")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_sfcanl_${FULL_CYCLE}")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_prep_emissions_${FULL_CYCLE}")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gcdas_aeroanlfinal_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "enkfgdas_atmensanlinit")
       list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_epmn_${HALF_CYCLE}")
-      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_prepatmiodaobs_${FULL_CYCLE}")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_prep_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "enkfgdas_atmensanlobs")
       list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_atmensanlinit_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "enkfgdas_atmensanlsol")
@@ -150,7 +187,7 @@ function(add_task task_name test_prefix is_full_cycle HALF_CYCLE FULL_CYCLE pslo
     elseif("${task_name}" STREQUAL "enkfgdas_esfc")
       if("${pslot}" STREQUAL "C96C48_ufs_hybatmDA")
         list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_atmensanlfinal_${FULL_CYCLE}")
-      elseif("${pslot}" STREQUAL "C96C48_hybatmaerosnowDA")
+      elseif("${pslot}" STREQUAL "C96C48_hybatmsnowDA")
         list(APPEND TEST_DEPENDS "${test_prefix}_gdas_analcalc_${FULL_CYCLE}")
         list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_eupd_${FULL_CYCLE}")
         list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_esnowanl_${FULL_CYCLE}")
@@ -167,11 +204,13 @@ function(add_task task_name test_prefix is_full_cycle HALF_CYCLE FULL_CYCLE pslo
       endif()
     elseif("${task_name}" STREQUAL "gdas_prepoceanobs")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_fcst_${HALF_CYCLE}")
-    elseif("${task_name}" STREQUAL "gdas_marinebmat")
+    elseif("${task_name}" STREQUAL "gdas_marinebmatinit")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_fcst_${HALF_CYCLE}")
       if("${pslot}" STREQUAL "C48mx500_hybAOWCDA")
         list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_fcst_${HALF_CYCLE}")
       endif()
+    elseif("${task_name}" STREQUAL "gdas_marinebmat")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_marinebmatinit_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "gdas_marineanlinit")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_fcst_${HALF_CYCLE}")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_prepoceanobs_${FULL_CYCLE}")
@@ -180,14 +219,19 @@ function(add_task task_name test_prefix is_full_cycle HALF_CYCLE FULL_CYCLE pslo
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_marineanlinit_${FULL_CYCLE}")
     elseif("${task_name}" STREQUAL "gdas_marineanlchkpt")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_marineanlvar_${FULL_CYCLE}")
+      if("${pslot}" STREQUAL "C48mx500_hybAOWCDA")
+        list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_marineanlecen_${FULL_CYCLE}")
+      endif()
     elseif("${task_name}" STREQUAL "gdas_marineanlfinal")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_marineanlchkpt_${FULL_CYCLE}")
-    elseif("${task_name}" STREQUAL "gdas_marineanlletkf")
+      if("${pslot}" STREQUAL "C48mx500_hybAOWCDA")
+        list(APPEND TEST_DEPENDS "${test_prefix}_enkfgdas_marineanlletkf_${FULL_CYCLE}")
+      endif()
+    elseif("${task_name}" STREQUAL "enkfgdas_marineanlletkf")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_prepoceanobs_${FULL_CYCLE}")
       list(APPEND TEST_DEPENDS "${test_prefix}_gdas_marinebmat_${FULL_CYCLE}")
-    elseif("${task_name}" STREQUAL "gdas_ocnanalecen")
-      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_marineanlvar_${FULL_CYCLE}")
-      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_marineanlletkf_${FULL_CYCLE}")
+    elseif("${task_name}" STREQUAL "enkfgdas_marineanlecen")
+      list(APPEND TEST_DEPENDS "${test_prefix}_gdas_marinebmatinit_${FULL_CYCLE}")
     else()
       list(APPEND TEST_DEPENDS "${test_prefix}")
     endif()
@@ -251,7 +295,8 @@ if (WORKFLOW_TESTS)
   # List of tests to run
   option(TEST_GSI "Enable the GFSv17 GSI tests" ON)
   option(TEST_GFS18 "Enable the GFSv18 Atmos JEDI tests" ON)
-  option(TEST_AERO_LAND "Enable the GFSv17 Aero-Land JEDI tests" ON)
+  option(TEST_AERO "Enable the GCAFS Aero JEDI tests" ON)
+  option(TEST_LAND "Enable the GFSv17 Land JEDI tests" ON)
   option(TEST_MARINE_VAR "Enable the GFSv17 Marine JEDI 3D VAR FGAT tests" ON)
   option(TEST_MARINE_HYB "Enable the GFSv17 Marine JEDI 3d HYB VAR tests" ON)
   option(TEST_GFS17 "Enable the GFSv17 WCDA tests" OFF)
@@ -304,7 +349,6 @@ if (WORKFLOW_TESTS)
       "enkfgdas_epmn")
     set(FULL_CYCLE_TASKS
       "gdas_prep"
-      "gdas_prepatmiodaobs"
       "gdas_atmanlinit"
       "gdas_atmanlvar"
       "gdas_atmanlfv3inc"
@@ -324,16 +368,74 @@ if (WORKFLOW_TESTS)
     add_cycling_tests(${pslot} ${YAML_PATH} ${HOMEgfs} ${WORKING_DIRECTORY} ${PROJECT_SOURCE_DIR} "${HALF_CYCLE_TASKS}" "${FULL_CYCLE_TASKS}")
   endif()  # TEST_V18
 
-  # Aero-Land DA C96
-  # ----------------
-  if(${TEST_AERO_LAND})
-    set(pslot "C96C48_hybatmaerosnowDA")
+  # JEDI EnVar with GSI EnKF DA C96/C48
+  # -----------------------------------
+  if(${TEST_GFS18})
+    set(pslot "C96C48_ufsgsi_hybatmDA")
     set(YAML_PATH ${HOMEgfs}/dev/ci/cases/pr/${pslot}.yaml)
     set(HALF_CYCLE_TASKS
       "gdas_stage_ic"
       "gdas_fcst"
       "gdas_atmos_prod"
-      "gdas_aeroanlgenb"
+      "enkfgdas_stage_ic"
+      "enkfgdas_fcst"
+      "enkfgdas_echgres"
+      "enkfgdas_epmn")
+    set(FULL_CYCLE_TASKS
+      "gdas_prep"
+      "gdas_atmanlinit"
+      "gdas_atmanlvar"
+      "gdas_atmanlfv3inc"
+      "gdas_atmanlfinal"
+      "gdas_sfcanl"
+      "gdas_analcalc"
+      "gdas_fcst"
+      "enkfgdas_eobs"
+      "enkfgdas_ediag"
+      "enkfgdas_eupd"
+      "enkfgdas_ecmn"
+      "enkfgdas_esfc"
+      "enkfgdas_fcst"
+    )
+    add_cycling_tests(${pslot} ${YAML_PATH} ${HOMEgfs} ${WORKING_DIRECTORY} ${PROJECT_SOURCE_DIR} "${HALF_CYCLE_TASKS}" "${FULL_CYCLE_TASKS}")
+  endif()  # TEST_V18
+
+
+# Aero DA C96
+  # ----------------
+  if(${TEST_AERO})
+    set(pslot "C96_gcafs_cycled")
+    set(YAML_PATH ${HOMEgfs}/dev/ci/cases/pr/${pslot}.yaml)
+    set(HALF_CYCLE_TASKS
+      "gcdas_stage_ic"
+      "gcdas_prep_emissions"
+      "gcdas_fcst"
+      "gcdas_atmos_prod"
+      "gcdas_aeroanlgenb")
+    set(FULL_CYCLE_TASKS
+      "gcdas_fetch"
+      "gcdas_offlineanl"
+      "gcdas_sfcanl"
+      "gcdas_aeroanlgenb"
+      "gcdas_aeroanlinit"
+      "gcdas_aeroanlvar"
+      "gcdas_aeroanlfinal"
+      "gcdas_prep"
+      "gcdas_prep_emissions"
+      "gcdas_fcst"
+    )
+    add_cycling_tests(${pslot} ${YAML_PATH} ${HOMEgfs} ${WORKING_DIRECTORY} ${PROJECT_SOURCE_DIR} "${HALF_CYCLE_TASKS}" "${FULL_CYCLE_TASKS}")
+  endif()  # TEST_AERO
+
+# Land DA C96
+  # ----------------
+  if(${TEST_LAND})
+    set(pslot "C96C48_hybatmsnowDA")
+    set(YAML_PATH ${HOMEgfs}/dev/ci/cases/pr/${pslot}.yaml)
+    set(HALF_CYCLE_TASKS
+      "gdas_stage_ic"
+      "gdas_fcst"
+      "gdas_atmos_prod"
       "enkfgdas_stage_ic"
       "enkfgdas_fcst"
       "enkfgdas_echgres"
@@ -341,9 +443,6 @@ if (WORKFLOW_TESTS)
     set(FULL_CYCLE_TASKS
       "gdas_prep"
       "gdas_anal"
-      "gdas_aeroanlinit"
-      "gdas_aeroanlvar"
-      "gdas_aeroanlfinal"
       "gdas_snowanl"
       "gdas_sfcanl"
       "gdas_analcalc"
@@ -357,7 +456,7 @@ if (WORKFLOW_TESTS)
       "enkfgdas_fcst"
     )
     add_cycling_tests(${pslot} ${YAML_PATH} ${HOMEgfs} ${WORKING_DIRECTORY} ${PROJECT_SOURCE_DIR} "${HALF_CYCLE_TASKS}" "${FULL_CYCLE_TASKS}")
-  endif()  # TEST_AERO_LAND
+  endif()  # TEST_LAND
 
   if(${TEST_MARINE_VAR})
     # GSI Atm DA C48, JEDI Marine DA 500
@@ -370,6 +469,7 @@ if (WORKFLOW_TESTS)
       "gdas_fcst")
     set(FULL_CYCLE_TASKS
       "gdas_prepoceanobs"
+      "gdas_marinebmatinit"
       "gdas_marinebmat"
       "gdas_marineanlinit"
       "gdas_marineanlvar"
@@ -397,11 +497,12 @@ if (WORKFLOW_TESTS)
       "enkfgdas_fcst")
     set(FULL_CYCLE_TASKS
       "gdas_prepoceanobs"
+      "gdas_marinebmatinit"
       "gdas_marinebmat"
-      "gdas_marineanlletkf"
+      "enkfgdas_marineanlletkf"
       "gdas_marineanlinit"
       "gdas_marineanlvar"
-      "gdas_ocnanalecen"
+      "enkfgdas_marineanlecen"
       "gdas_marineanlchkpt"
       "gdas_marineanlfinal"
       )
@@ -419,6 +520,7 @@ if (WORKFLOW_TESTS)
       "gdas_fcst")
     set(FULL_CYCLE_TASKS
       "gdas_prepoceanobs"
+      "gdas_marinebmatinit"
       "gdas_marinebmat"
       "gdas_marineanlinit"
       "gdas_marineanlvar"
