@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set -x
 # build.sh
 # 1 - determine host, load modules on supported hosts; proceed w/o otherwise
 # 2 - configure; build; install
@@ -93,7 +92,6 @@ case ${BUILD_TARGET} in
     ;;
 esac
 
-#CMAKE_OPTS+=" -DCLONE_JCSDADATA=$CLONE_JCSDADATA -DMACHINE=$BUILD_TARGET -DUFS_APP=ATM -DCMAKE_INSTALL_LIBDIR:PATH=lib"
 CMAKE_OPTS+=" -DCLONE_JCSDADATA=$CLONE_JCSDADATA -DMACHINE=$BUILD_TARGET -DBUILD_TESTING=$BUILD_TESTING"
 
 # TODO: Remove LD_LIBRARY_PATH line as soon as permanent solution is available
@@ -151,7 +149,6 @@ cmake \
   $dir_root/bundle
 set +x
 
-#export LIBRARY_PATH=$LIBRARY_PATH:$netcdf_c_ROOT/lib
 # Install
 echo "Installing ... `date`"
 set -x

@@ -4,12 +4,12 @@
 
 # Check for minimim cmake requirement
 cmake_minimum_required( VERSION 3.20 FATAL_ERROR )
-include( ExternalProject )
 
 find_package(ecbuild 3.5 REQUIRED HINTS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../ecbuild)
 
 project(gdas VERSION 1.0.0 LANGUAGES C CXX Fortran )
 
+include(GNUInstallDirs)
 enable_testing()
 
 # Build type.
@@ -41,13 +41,11 @@ option(BUILD_IODA_CONVERTERS "Build IODA Converters" OFF)
 # Depend path for non-ecbuild packages
 set(DEPEND_LIB_ROOT ${CMAKE_CURRENT_BINARY_DIR}/Depends)
 list(APPEND CMAKE_PREFIX_PATH ${DEPEND_LIB_ROOT})
-include_directories(${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_INCLUDEDIR})
-include_directories(${DEPEND_LIB_ROOT}/include_r8)
-link_directories(${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR})
 
 # Library path for non-ecbuild packages
 link_directories(${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 
+include( GNUInstallDirs )
 if(APPLE)
   list( APPEND CMAKE_INSTALL_RPATH $ENV{llvm_openmp_ROOT}/${CMAKE_INSTALL_LIBDIR} )
 endif()
@@ -90,105 +88,6 @@ if(BUILD_GDASBUNDLE)
 
 # Gibbs seawater
   ecbuild_bundle( PROJECT gsw SOURCE "../sorc/gsw" )
-
-  # Set variables for UFS clone and build
-  # Needed to get correct OpenMP link libraries on macOS
-  set(UFS_CMAKE_EXE_LINKER_FLAGS "-L${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
-  find_package(FMS 2023.04 REQUIRED COMPONENTS R4 R8)
-  set(UFS_APP "ATM") 
-  set(FV3_FORECAST_MODEL "UFS")
-  set(FV3_PRECISION DOUBLE CACHE STRING "Precision of FV3 core (SINGLE, DOUBLE)")
-  if (FV3_PRECISION MATCHES DOUBLE)
-    add_library(fms ALIAS FMS::fms_r8)
-  elseif (FV3_PRECISION MATCHES SINGLE)
-    add_library(fms ALIAS FMS::fms_r4)
-  endif()
-  find_package(OpenMP REQUIRED)
-  if(APPLE)
-    set(UFS_CMAKE_EXE_LINKER_FLAGS "${UFS_CMAKE_EXE_LINKER_FLAGS} ${OpenMP_libomp_LIBRARY} ${OpenMP_libomp_LIBRARY}")
-  endif()
-  message (STATUS "UFS_CMAKE_EXE_LINKER_FLAGS: ${UFS_CMAKE_EXE_LINKER_FLAGS}")
-  
-  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(UFS_CMAKE_BUILD_TYPE_FLAG "-DDEBUG=ON")
-  else()
-    # MAYBE THIS SHOULD BE EMPTY SO THAT RELEASE IS USED, REPRO ISN'T REALLY SUPPORTED ANYMORE
-    set(UFS_CMAKE_BUILD_TYPE_FLAG "-DREPRO=ON")
-  endif()
-  
- 
-  set(UFS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ufs-weather-model)
-  set(UFS_REPO https://github.com/ufs-community/ufs-weather-model)
-  set(UFS_TAG "develop" )
-  set(patch_command ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/../sorc/patches/ufs-wm.patch <SOURCE_DIR> && cd <SOURCE_DIR> && git apply ufs-wm.patch)
-  
-  ExternalProject_Add(ufs-weather-model
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/ufs-weather-model
-    GIT_REPOSITORY ${UFS_REPO}
-    GIT_SUBMODULES_RECURSE TRUE
-    GIT_TAG ${UFS_TAG}
-    PATCH_COMMAND ${patch_command}
-    SOURCE_DIR ${UFS_SOURCE_DIR}
-    UPDATE_DISCONNECTED ON
-    INSTALL_DIR ${DEPEND_LIB_ROOT}
-    # DH* 20230316 turn off OpenMP for now ...
-    CMAKE_ARGS -DCMAKE_INSTALL_LIBDIR=${CMAKE_INSTALL_LIBDIR} -DCMAKE_C_FLAGS=-fPIC -DCMAKE_Fortran_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC -DCCPP_SUITES=FV3_GFS_v16,FV3_GFS_v17_coupled_p8,FV3_GFS_v15p2,FV3_GFS_v17_p8 -DCMAKE_EXE_LINKER_FLAGS=${UFS_CMAKE_EXE_LINKER_FLAGS} -DCMAKE_C_COMPILER=${MPI_C_COMPILER} -DCMAKE_CXX_COMPILER=${MPI_CXX_COMPILER} -DCMAKE_Fortran_COMPILER=${MPI_Fortran_COMPILER} -DJEDI_DRIVER=ON -DCMAKE_PREFIX_PATH=${CMAKE_CURRENT_BINARY_DIR}/gsw ${UFS_CMAKE_BUILD_TYPE_FLAG} -DOPENMP=ON -DINLINE_POST=OFF -DMULTI_GASES=OFF -DMPI=ON -DAPP=${UFS_APP} -DCMAKE_INSTALL_PREFIX=${DEPEND_LIB_ROOT}
-    # *DH
-    INSTALL_COMMAND make install
-    BUILD_ALWAYS TRUE
-    )
-  
-  if(UFS_APP MATCHES "^(ATMAERO)$" OR UFS_APP MATCHES "^(S2S)$" OR UFS_APP MATCHES "^(NG-GODAS)$")
-    add_dependencies(ufs-weather-model gsw)
-  endif()
-  add_library( ufs IMPORTED STATIC)
-  add_library( ufs_aerosols IMPORTED STATIC)
-  add_library( aerosols_gridcomp IMPORTED STATIC)
-  add_library( gocart_gridcomp IMPORTED STATIC)
-  add_library( ca2g_gridcomp IMPORTED STATIC)
-  add_library( chem_shared IMPORTED STATIC)
-  add_library( gocart_process IMPORTED STATIC)
-  add_library( du2g_gridcomp IMPORTED STATIC)
-  add_library( ni2g_gridcomp IMPORTED STATIC)
-  add_library( ss2g_gridcomp IMPORTED STATIC)
-  add_library( su2g_gridcomp IMPORTED STATIC)
-  add_library( ga_environment IMPORTED STATIC)
-  add_library( cdeps IMPORTED STATIC)
-  add_library( cmeps IMPORTED STATIC)
-  add_library( ccpp IMPORTED STATIC)
-  add_library( stochastic_physics IMPORTED STATIC)
-  add_library( ufsatm_fv3 IMPORTED STATIC)
-  add_library( ccppphys IMPORTED STATIC)
-# add_library( mom6 IMPORTED STATIC)
-  set_target_properties( ufs PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libufs.a )
-  set_target_properties( ufs_aerosols PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libUFS_Aerosols.a )
-  set_target_properties( aerosols_gridcomp PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libAerosol_GridComp.a )
-  set_target_properties( gocart_gridcomp PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libGOCART2G_GridComp.a )
-  set_target_properties( ca2g_gridcomp PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libCA2G_GridComp.a )
-  set_target_properties( chem_shared PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libChem_Shared2G.a )
-  set_target_properties( gocart_process PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libProcess_Library.a )
-  set_target_properties( du2g_gridcomp PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libDU2G_GridComp.a )
-  set_target_properties( ni2g_gridcomp PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libNI2G_GridComp.a )
-  set_target_properties( ss2g_gridcomp PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libSS2G_GridComp.a )
-  set_target_properties( su2g_gridcomp PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libSU2G_GridComp.a )
-  set_target_properties( ga_environment PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libGA_Environment.a )
-  set_target_properties( cdeps PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libcdeps.a )
-  set_target_properties( cmeps PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libcmeps.a )
-  set_target_properties( ccpp PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libccpp_framework.a )
-  set_target_properties( stochastic_physics PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libstochastic_physics.a )
-  set_target_properties( ufsatm_fv3 PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libufsatm_fv3.a )
-  set_target_properties( ccppphys PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libccpp_physics.a )
-# set_target_properties( mom6 PROPERTIES IMPORTED_LOCATION ${DEPEND_LIB_ROOT}/${CMAKE_INSTALL_LIBDIR}/libmom6.a )
-  
-  # Additional dependencies that we can't know about because ufs-weather-model is an external project 
-  target_link_libraries( ufsatm_fv3 INTERFACE fms )
-  
-  # Build Doxygen documentation
-  # ---------------------------
-  option(BUILD_UFSJEDI_BUNDLE_DOC "Build documentation" OFF)
-  if(BUILD_UFSJEDI_BUNDLE_DOC)
-     add_subdirectory( Documentation )
-  endif()
 
 # EMC BUFR-query library
   ecbuild_bundle( PROJECT bufr-query SOURCE "../sorc/bufr-query" )
@@ -247,9 +146,8 @@ if(BUILD_GDASBUNDLE)
 
   endif(CLONE_JCSDADATA)
 
-  
 endif(BUILD_GDASBUNDLE)
-  
+
 # Finalize bundle
 # ---------------
 ecbuild_bundle_finalize()
